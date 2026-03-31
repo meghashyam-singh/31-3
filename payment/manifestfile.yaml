@@ -55,7 +55,7 @@ spec:
             - configMapRef:
                 name: payment-config
           readinessProbe:
-            htppGet:
+            httpGet:
               path: /health
               port: payment-port
             failureThreshold: 2
@@ -63,7 +63,7 @@ spec:
             periodSeconds: 40
             timeoutSeconds: 10
           livenessProbe:
-            htppGet:
+            httpGet:
               path: /health
               port: payment-port
             failureThreshold: 2
