@@ -49,7 +49,7 @@ spec:
           image: meghashyam792/roboshop:mysql
           imagePullPolicy: Always
           ports:
-            - port: 3306
+            - containerPort: 3306
               name: mysql-port
           resources:
             requests:
