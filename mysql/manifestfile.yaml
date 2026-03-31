@@ -2,122 +2,142 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: mongodb-storage
+  name: mysql-storage
 provisioner: ebs.csi.aws.com
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: roboshop
+data:
+  my.cnf: |
+    [mysqld]
+    innodb_redo_log_capacity = 2G
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mongodb
+  name: mysql
   namespace: roboshop
   labels:
     project: roboshop
     tier: db
-    component: mongodb
+    component: mysql
 spec:
-  serviceName: mongodb-headless-service
-  replicas: 2
+  serviceName: mysql-headless-service
+  replicas: 1
   selector:
     matchLabels:
       project: roboshop
       tier: db
-      component: mongodb
+      component: mysql
   template:
     metadata:
       labels:
         project: roboshop
         tier: db
-        component: mongodb
+        component: mysql
     spec:
-      serviceAccountName: mongodb-service-account
+      serviceAccountName: mysql-service-account
       containers:
-        - name: mongodb-cont
-          image: meghashyam792/roboshop:mongodb
+        - name: mysql-cont
+          image: meghashyam792/roboshop:mysql
           imagePullPolicy: Always
           ports:
-            - containerPort: 27017
-              name: mongodb-port
+            - port: 3306
+              name: mysql-port
           resources:
             requests:
-              cpu: "200m"
+              cpu: "500m"
               memory: "256Mi"
             limits:
-              cpu: "500m"
+              cpu: "1000m"
               memory: "512Mi"
           readinessProbe:
             tcpSocket:
-              port: mongodb-port
-            failureThreshold: 1
+              port: mysql-port
+            failureThreshold: 2
             initialDelaySeconds: 40
             periodSeconds: 40
-            timeoutSeconds: 10
+            timeoutSeconds: 15
           livenessProbe:
             tcpSocket:
-              port: mongodb-port
-            failureThreshold: 3
+              port: mysql-port
+            failureThreshold: 2
             initialDelaySeconds: 40
             periodSeconds: 40
-            timeoutSeconds: 10
+            timeoutSeconds: 15
           volumeMounts:
-            - name: mongodb-pvc
-              mountPath: /data/db
+            - name: mysql-volume
+              mountPath: /etc/mysql/conf.d/my.cnf
+              subPath: my.cnf
+            - name: mysql-pvc
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-volume
+          configMap:
+            name: mysql-config
   volumeClaimTemplates:
     - metadata:
-        name: mongodb-pvc
+        name: mysql-pvc
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: mongodb-storage
+        storageClassName: mysql-storage
         resources:
           requests:
-            storage: "5Gi"
+            storage: "10Gi"
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-service
+  name: mysql-service
   namespace: roboshop
 spec:
   type: ClusterIP
   selector:
     project: roboshop
     tier: db
-    component: mongodb
+    component: mysql
   ports:
     - protocol: TCP
-      port: 27017
-      targetPort: 27017
-      name: mongodb-port
-    
+      port: 3306
+      targetPort: 3306
+      name: mysql-port
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-headless-service
+  name: mysql-headless-service
   namespace: roboshop
 spec:
   clusterIP: None
   selector:
     project: roboshop
     tier: db
-    component: mongodb
+    component: mysql
   ports:
     - protocol: TCP
-      port: 27017
-      targetPort: 27017
-      name: mongodb-port
-          
+      port: 3306
+      targetPort: 3306
+      name: mysql-port
+
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: mongodb-service-account
+  name: mysql-service-account
   namespace: roboshop
   labels:
     project: roboshop
     tier: db
-    component: mongodb
+    component: mysql
+  annotations:
+    eks.amazon.com/role-arn: arn:aws:iam::515138251473:role/mysql-role
