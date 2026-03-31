@@ -9,7 +9,7 @@ data:
   MONGO_URL: "mongodb://mongodb-service:27017/catalogue"
 
 ---
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: catalogue
