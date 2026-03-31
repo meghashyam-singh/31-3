@@ -63,14 +63,14 @@ spec:
           readinessProbe:
             tcpSocket:
               port: rabbitmq-port
-            failurethreshold: 1
+            failureThreshold: 1
             initialDelaySeconds: 50
             periodSeconds: 50
             timeoutSeconds: 10
           livenessProbe:
             tcpSocket:
               port: rabbitmq-port
-            failurethreshold: 1
+            failureThreshold: 1
             initialDelaySeconds: 50
             periodSeconds: 50
             timeoutSeconds: 10
