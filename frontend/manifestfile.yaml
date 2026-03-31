@@ -93,7 +93,7 @@ spec:
         tier: frontend
         component: frontend
     spec:
-      servoceAccountName: frontend-service-account
+      serviceAccountName: frontend-service-account
       containers:
         - name: frontend-cont
           image: meghashyam792/roboshop:frontend
